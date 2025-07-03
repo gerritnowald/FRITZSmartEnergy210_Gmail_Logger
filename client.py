@@ -7,10 +7,12 @@ from auth import authenticate
 
 
 class GmailApi:
+    
     def __init__(self):
         creds = authenticate()
         self.service = build("gmail", "v1", credentials=creds)
 
+    
     def find_emails(self, sender: str):
         print("\n=============== Find Emails: start ===============")
         request = (
@@ -31,11 +33,13 @@ class GmailApi:
 
         return messages
 
+    
     def get_email(self, email_id: str):
         print("\n=============== Get Email: start ===============")
 
         request = self.service.users().messages().get(userId="me", id=email_id)
-        result = self._execute_request(request)
+        result  = self._execute_request(request)
+
         content = result["payload"]["parts"][0]["body"]["data"]
         content = content.replace("-", "+").replace("_", "/")
         decoded = base64.b64decode(content).decode("utf-8")
@@ -44,7 +48,29 @@ class GmailApi:
         print("=============== Get Email: end ===============")
 
         return decoded
+    
 
+    def list_labels(self):
+        print("\n=============== List Labels: start ===============")
+        
+        request = self.service.users().labels().list(userId="me")
+        results = self._execute_request(request)
+
+        labels  = results.get("labels", [])
+
+        if not labels:
+            print("No labels found.")
+            return
+        print("Labels:")
+        for label in labels:
+            print(label["name"])
+
+        print(f"Retrieved {len(labels)} labels.")
+        print("=============== List Labels: end ===============")
+
+        return labels
+
+    
     @staticmethod
     def _execute_request(request):
         try:
