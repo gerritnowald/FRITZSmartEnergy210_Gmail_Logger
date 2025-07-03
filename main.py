@@ -4,7 +4,7 @@ from client import GmailApi
 def main():
     client = GmailApi()
 
-    sender = "your sender here: either email or sender name"
+    sender = "hannahritchie@substack.com"    # either email or sender name
     emails = client.find_emails(sender)
     email_ids = [email["id"] for email in emails]
     contents = [client.get_email(email_id) for email_id in email_ids]
