@@ -14,7 +14,6 @@ class GmailApi:
 
     
     def find_emails(self, sender: str):
-        print("\n=============== Find Emails: start ===============")
         request = (
             self.service.users()
             .messages()
@@ -24,18 +23,15 @@ class GmailApi:
         result = self._execute_request(request)
         try:
             messages = result["messages"]
-            print(f"Retrieved messages matching the '{sender}' query: {messages}")
+            print(f"Retrieved messages matching the '{sender}' query: {len(messages)}")
         except KeyError:
             print(f"No messages found for the sender '{sender}'")
             messages = []
-
-        print("=============== Find Emails: end ===============")
 
         return messages
 
     
     def get_email(self, email_id: str):
-        print("\n=============== Get Email: start ===============")
 
         request = self.service.users().messages().get(userId="me", id=email_id)
         result  = self._execute_request(request)
@@ -45,13 +41,11 @@ class GmailApi:
         decoded = base64.b64decode(content).decode("utf-8")
 
         print(f"Retrieved email with email_id={email_id}: {result}")
-        print("=============== Get Email: end ===============")
 
         return decoded
     
 
     def list_labels(self):
-        print("\n=============== List Labels: start ===============")
         
         request = self.service.users().labels().list(userId="me")
         results = self._execute_request(request)
@@ -66,7 +60,6 @@ class GmailApi:
             print(label["name"])
 
         print(f"Retrieved {len(labels)} labels.")
-        print("=============== List Labels: end ===============")
 
         return labels
 
