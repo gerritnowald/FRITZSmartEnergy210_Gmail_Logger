@@ -2,7 +2,7 @@ from googleapiclient.discovery import build
 
 import base64
 
-from auth import authenticate
+from authentication.auth import authenticate
 
 # -------------------------------------------------------------
 # user input
