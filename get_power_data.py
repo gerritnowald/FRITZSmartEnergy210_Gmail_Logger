@@ -1,13 +1,19 @@
 from googleapiclient.discovery import build
 
 import base64
+import argparse
 
 from authentication.auth import authenticate
 
 # -------------------------------------------------------------
 # user input
 
-label_id = "Label_231893078114603930"
+argparser = argparse.ArgumentParser(description="Download attachments from Gmail messages with a specific label.")
+argparser.add_argument("-l", "--label", type=str,
+    help="The label ID of the messages to download attachments from."
+)
+
+label_id = argparser.parse_args().label
 
 # -------------------------------------------------------------
 # function to download attachments from Gmail messages
