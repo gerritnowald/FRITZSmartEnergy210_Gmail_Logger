@@ -1,5 +1,4 @@
-# author: Simonas Viliūnas  
-# https://github.com/vilisimo/examples/tree/main/gmail
+# https://github.com/googleworkspace/python-samples/blob/main/gmail/quickstart/quickstart.py
 
 import os.path
 
@@ -10,7 +9,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
-TOKEN_PATH = "token.json"
+TOKEN_PATH       = "token.json"
 CREDENTIALS_PATH = "credentials.json"
 
 
