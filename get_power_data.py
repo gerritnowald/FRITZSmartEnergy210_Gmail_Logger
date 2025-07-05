@@ -2,6 +2,7 @@ from googleapiclient.discovery import build
 
 import base64
 import argparse
+import os
 
 from authentication.auth import authenticate
 
@@ -9,11 +10,12 @@ from authentication.auth import authenticate
 # user input
 
 argparser = argparse.ArgumentParser(description="Download attachments from Gmail messages with a specific label.")
-argparser.add_argument("-l", "--label", type=str,
-    help="The label ID of the messages to download attachments from."
-)
+argparser.add_argument('labelID', type=str, help="Use get_label_ids.py to find the label ID.")
+argparser.add_argument("-d", "--data_dir", type=str, default="./data",
+                       help="Directory downloaded attachments are saved to (default: ./data).")
 
-label_id = argparser.parse_args().label
+label_id = argparser.parse_args().labelID
+data_dir = argparser.parse_args().data_dir
 
 # -------------------------------------------------------------
 # function to download attachments from Gmail messages
@@ -32,11 +34,15 @@ def DownloadAttachments(service, msg_id):
                 att = service.users().messages().attachments().get(userId="me", messageId=msg_id,id=att_id).execute()
                 data = att['data']
             file_data = base64.urlsafe_b64decode(data.encode('UTF-8'))
-            path = './data/' + part['filename']
+
+            path = os.path.join(data_dir, part['filename'])
+            if not os.path.exists(data_dir):
+                os.makedirs(data_dir)
+                print(f"Created directory {data_dir}")
 
             with open(path, 'wb') as f:
                 f.write(file_data)
-                print(f"Downloaded {part['filename']} to ./data/")
+                print(f"Downloaded {part['filename']} to {data_dir}")
 
 # -------------------------------------------------------------
 # authenticate
