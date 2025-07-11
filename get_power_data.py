@@ -62,6 +62,16 @@ def DownloadInlineImages(service, msg_id):
         print(f"Downloaded {filename} to {data_dir}")
 
 # -------------------------------------------------------------
+# function to get subject of a message
+
+def GetSubject(service, msg_id):
+    message = service.users().messages().get(userId="me", id=msg_id).execute()
+    for header in message['payload']['headers']:
+        if header['name'] == 'Subject':
+            return header['value']
+    return None
+
+# -------------------------------------------------------------
 # authenticate
 
 creds = authenticate()
@@ -86,5 +96,7 @@ for id in msg_ids:
 
     DownloadInlineImages(service, id)
 
-# service.users().messages().trash(userId="me", id=id).execute()
-# print(f"Message {id} moved to trash")
+    subject = GetSubject(service, id)
+
+    service.users().messages().trash(userId="me", id=id).execute()
+    print(f"Message '{subject}' moved to trash")
