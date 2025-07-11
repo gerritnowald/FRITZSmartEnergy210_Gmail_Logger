@@ -45,6 +45,23 @@ def DownloadAttachments(service, msg_id):
                 print(f"Downloaded {part['filename']} to {data_dir}")
 
 # -------------------------------------------------------------
+# function to download inline images from Gmail messages
+
+def DownloadInlineImages(service, msg_id):
+    message = service.users().messages().get(userId="me", id=msg_id).execute()
+
+    att_id = message['payload']['parts'][0]['parts'][2]['body']['attachmentId']
+    att = service.users().messages().attachments().get(userId="me", messageId=msg_id,id=att_id).execute()
+    file_data = base64.urlsafe_b64decode(att['data'].encode('UTF-8'))
+
+    filename = message['payload']['parts'][1]['filename'][:-4] + "_temperature.png"
+    path = os.path.join(data_dir, filename)
+
+    with open(path, 'wb') as f:
+        f.write(file_data)
+        print(f"Downloaded {filename} to {data_dir}")
+
+# -------------------------------------------------------------
 # authenticate
 
 creds = authenticate()
@@ -63,9 +80,11 @@ print(f"{len(msg_ids)} messages found")
 # download attachments and move messages to trash
 
 for id in msg_ids:
-# id = msg_ids[-1]
+# id = msg_ids[0]
 
     DownloadAttachments(service, id)
+
+    DownloadInlineImages(service, id)
 
 # service.users().messages().trash(userId="me", id=id).execute()
 # print(f"Message {id} moved to trash")
