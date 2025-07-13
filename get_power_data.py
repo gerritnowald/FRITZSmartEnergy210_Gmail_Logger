@@ -10,12 +10,15 @@ from authentication.auth import authenticate
 # user input
 
 argparser = argparse.ArgumentParser(description="Download attachments from Gmail messages with a specific label.")
-argparser.add_argument('labelID', type=str, help="Use get_label_ids.py to find the label ID.")
-argparser.add_argument("-d", "--data_dir", type=str, default="./data",
-                       help="Directory downloaded attachments are saved to (default: ./data).")
+argparser.add_argument('labelID', type=str, help="Use 'get_label_ids.py' to find the label ID.")
+argparser.add_argument("-d", "--data_dir", type=str, default="./attachments",
+                       help="Directory downloaded attachments are saved to (default: ./attachments).")
+argparser.add_argument("-t", "--trash", action='store_true',
+                       help="Move messages to trash after downloading.")
 
 label_id = argparser.parse_args().labelID
 data_dir = argparser.parse_args().data_dir
+trash    = argparser.parse_args().trash
 
 # -------------------------------------------------------------
 # function to download attachments from Gmail messages
@@ -27,8 +30,8 @@ def DownloadAttachments(service, msg_id):
 
     for part in message['payload']['parts']:
         if not part['filename']:
-            return
-        
+            continue
+
         if 'data' in part['body']:
             data = part['body']['data']
         else:
@@ -84,9 +87,12 @@ service = build("gmail", "v1", credentials=creds)
 
 msg_ids = ( service.users().messages()
     .list(userId="me", labelIds=[label_id]).execute() )
-msg_ids = [msg['id'] for msg in msg_ids['messages']]
-
-print(f"{len(msg_ids)} messages found")
+try:
+    msg_ids = [msg['id'] for msg in msg_ids['messages']]
+    print(f"{len(msg_ids)} messages found")
+except KeyError:
+    msg_ids = []
+    print("No messages found")
 
 # -------------------------------------------------------------
 # download attachments and move messages to trash
@@ -100,5 +106,8 @@ for id in msg_ids:
 
     subject = GetSubject(service, id)
 
-    service.users().messages().trash(userId="me", id=id).execute()
-    print(f"Message '{subject}' moved to trash")
+    if trash:
+        service.users().messages().trash(userId="me", id=id).execute()
+        print(f"Message '{subject}' moved to trash")
+
+    print(' ')
