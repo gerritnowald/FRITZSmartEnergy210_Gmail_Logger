@@ -21,60 +21,35 @@ data_dir = argparser.parse_args().data_dir
 trash    = argparser.parse_args().trash
 
 # -------------------------------------------------------------
-# function to download attachments from Gmail messages
-
+# functions to download attachments from Gmail messages
 # https://stackoverflow.com/questions/25832631/download-attachments-from-gmail-using-gmail-api
-def DownloadAttachments(service, msg_id):
-    """Get and store attachment from Message with given id. """
-    message = service.users().messages().get(userId="me", id=msg_id).execute()
 
-    for part in message['payload']['parts']:
-        if not part['filename']:
-            continue
-
-        if 'data' in part['body']:
-            data = part['body']['data']
-        else:
-            att_id = part['body']['attachmentId']
-            att = service.users().messages().attachments().get(userId="me", messageId=msg_id,id=att_id).execute()
-            data = att['data']
-        file_data = base64.urlsafe_b64decode(data.encode('UTF-8'))
-
-        path = os.path.join(data_dir, part['filename'])
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-            print(f"Created directory {data_dir}")
-
-        with open(path, 'wb') as f:
-            f.write(file_data)
-            print(f"Downloaded {part['filename']} to {data_dir}")
-
-# -------------------------------------------------------------
-# function to download inline images from Gmail messages
-
-def DownloadInlineImages(service, msg_id):
-    message = service.users().messages().get(userId="me", id=msg_id).execute()
-
-    att_id = message['payload']['parts'][0]['parts'][2]['body']['attachmentId']
+def DownloadAttachments(service, msg_id, att_id, filename):
     att = service.users().messages().attachments().get(userId="me", messageId=msg_id,id=att_id).execute()
     file_data = base64.urlsafe_b64decode(att['data'].encode('UTF-8'))
 
-    filename = message['payload']['parts'][1]['filename'][:-4] + "_temperature.png"
     path = os.path.join(data_dir, filename)
-
     with open(path, 'wb') as f:
         f.write(file_data)
         print(f"Downloaded {filename} to {data_dir}")
 
-# -------------------------------------------------------------
-# function to get subject of a message
 
-def GetSubject(service, msg_id):
-    message = service.users().messages().get(userId="me", id=msg_id).execute()
-    for header in message['payload']['headers']:
-        if header['name'] == 'Subject':
-            return header['value']
-    return None
+def get_attachment_ID(service, msg_id, message):
+    for part in message['payload']['parts']:
+        if not part['filename']:
+            continue
+
+        att_id = part['body']['attachmentId']
+        filename = part['filename']
+        
+        DownloadAttachments(service, msg_id, att_id, filename)
+
+
+def get_inline_ID(service, msg_id, message):
+    att_id   = message['payload']['parts'][0]['parts'][2]['body']['attachmentId']
+    filename = message['payload']['parts'][1]['filename'][:-4] + "_temperature.png"
+
+    DownloadAttachments(service, msg_id, att_id, filename)
 
 # -------------------------------------------------------------
 # authenticate
@@ -87,6 +62,7 @@ service = build("gmail", "v1", credentials=creds)
 
 msg_ids = ( service.users().messages()
     .list(userId="me", labelIds=[label_id]).execute() )
+
 try:
     msg_ids = [msg['id'] for msg in msg_ids['messages']]
     print(f"{len(msg_ids)} messages found")
@@ -97,17 +73,29 @@ except KeyError:
 # -------------------------------------------------------------
 # download attachments and move messages to trash
 
+if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        print(f"Created directory {data_dir}")
+
+
 for id in msg_ids:
-# id = msg_ids[0]
-
-    DownloadAttachments(service, id)
-
-    DownloadInlineImages(service, id)
-
-    subject = GetSubject(service, id)
-
-    if trash:
-        service.users().messages().trash(userId="me", id=id).execute()
-        print(f"Message '{subject}' moved to trash")
-
     print(' ')
+
+    message = service.users().messages().get(userId="me", id=id).execute()
+
+
+    get_attachment_ID(service, id, message)
+
+    get_inline_ID(service, id, message)
+
+
+    if not trash:
+        continue
+    
+    for header in message['payload']['headers']:
+        if header['name'] == 'Subject':
+            subject = header['value']
+            break
+
+    service.users().messages().trash(userId="me", id=id).execute()
+    print(f"Message '{subject}' moved to trash")
