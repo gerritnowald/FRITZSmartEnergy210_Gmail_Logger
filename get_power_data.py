@@ -47,6 +47,17 @@ if not os.path.exists(data_dir):
     print(f"Created directory {data_dir}")
 
 # -------------------------------------------------------------
+# function to get filenames and attachment IDs
+
+def get_attachments(parts, attIds, filenames):
+    for part in parts:
+        if 'filename' in part and 'attachmentId' in part.get('body', {}):
+            filenames.append(part['filename'])
+            attIds.append(part['body']['attachmentId'])
+        if 'parts' in part:
+            get_attachments(part['parts'], attIds, filenames)
+
+# -------------------------------------------------------------
 # get messages
 
 for msgId in msgIds:
@@ -58,17 +69,7 @@ for msgId in msgIds:
 
     attIds    = []
     filenames = []
-    for part in message['payload']['parts']:
-        if part['filename']:
-            attIds.append(part['body']['attachmentId'])
-            filenames.append(part['filename'])
-        try:
-            for part in part['parts']:
-                if part['filename']:
-                    attIds.append(part['body']['attachmentId'])
-                    filenames.append(part['filename'])
-        except KeyError:
-            pass
+    get_attachments(message['payload'].get('parts', []), attIds, filenames)
 
 # -------------------------------------------------------------
 # download attachments
