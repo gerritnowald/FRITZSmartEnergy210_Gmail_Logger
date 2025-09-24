@@ -1,0 +1,123 @@
+import glob
+import os
+from send2trash import send2trash
+
+import matplotlib.image as mpimg
+
+import numpy as np
+import pandas as pd
+
+# -------------------------------------------------------------------------------
+# get all temperature graph files
+
+files = glob.glob('.\\attachments\\ha_temp_*.png')
+
+# -------------------------------------------------------------------------------
+# create data directory if not exists
+
+if not os.path.exists('data'):
+    os.makedirs('data')
+    print(f"Created directory {'data'}")
+
+# -------------------------------------------------------------------------------
+# reference tick labels to determine y axis scale
+
+tick_labels = {
+    20: np.array([
+        [1, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 1, 1, 0, 0],
+        [1, 1, 1, 1, 1, 0, 0],
+        [1, 1, 1, 1, 0, 0, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 0, 0, 1, 1, 1],
+        [1, 0, 0, 1, 1, 1, 1],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0]
+    ]),
+    40: np.array([
+        [1, 1, 1, 1, 0, 0, 1],
+        [1, 1, 1, 0, 0, 0, 1],
+        [1, 1, 0, 0, 0, 0, 1],
+        [1, 0, 0, 1, 0, 0, 1],
+        [0, 0, 1, 1, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 0, 0, 1],
+        [1, 1, 1, 1, 0, 0, 1],
+        [1, 1, 1, 0, 0, 0, 0]
+    ])
+}
+
+# -------------------------------------------------------------------------------
+# residual function to compare tick labels
+
+residual = lambda x, y: np.sum(np.abs(x - y))
+
+# -------------------------------------------------------------------------------
+# x-axis: pixel to hour conversion
+
+# x-pixel     48 corresponds to hour  0
+# x-pixel 960-16 corresponds to hour 24
+min_max_hour = 24 * (np.array([49, 960-26]) - 48) / (960-16 - 48)
+hour_px = np.linspace(min_max_hour[0], min_max_hour[1], 885)
+
+# Create new hour values at every 15 minutes
+hour = np.arange(0, 24, 15/60)
+
+# -------------------------------------------------------------------------------
+# y-axis: pixel to temperature conversion
+
+for file in files:
+
+    # extract date from filename
+    date = file.split('_')[-3]
+    date = date[:4] + date[4:6] + date[6:8]
+
+    # read image
+    img = mpimg.imread(file)
+
+    # grayscale image
+    gray = img[..., :3].mean(axis=2)
+
+    # Threshold: find dark pixels (line)
+    line_mask = (gray > 0.6) * 1
+
+    # determine y-axis scale by checking the tick labels (max either 20°C or 40°C)
+    # find the closest tick label to the reference labels
+    tick_label = line_mask[56:65, 30:37]
+    y_max = min(tick_labels, key=lambda k: residual(tick_label, tick_labels[k]))
+
+    # Extract the (topmost) y-pixel number of the line
+    zero_mask = (line_mask == 0)
+    line_y = zero_mask.argmax(axis=0).astype(float)
+    line_y[~zero_mask.any(axis=0)] = np.nan
+
+    # convert pixels to values
+    # y-pixel 267 corresponds to temperature 0
+    # y-pixel  66 corresponds to temperature y_max
+    temp = y_max * (line_y[49:-26] - 267) / (66 - 267)
+
+    # Interpolate temperature values to every 15 minutes
+    temp = np.interp(hour, hour_px, temp)
+
+    # -------------------------------------------------------------------------------
+    # save temperature to corresponding csv file
+
+    csvfile = sorted(glob.glob(f'.\\attachments\\{date}*.csv'))[-1] # get latest csv file of that day
+    data = pd.read_csv(csvfile, header=1, sep=';', decimal=',')
+
+    data['Power / W'] = data['Verbrauchswert'] / 0.25 # energy is in Wh per 15 minutes = 0.25 hours
+
+    data = data[['Datum/Uhrzeit', 'Power / W']]    # retain only relevant columns
+    data.rename(columns={'Datum/Uhrzeit': 'Time'}, inplace=True)
+
+    data['Temperature / C'] = temp
+
+    data.to_csv(f'.\\data\\{date}.csv', index=False)
+
+    # -------------------------------------------------------------------------------
+    # remove all files with same date from attachments folder
+
+    files2trash = glob.glob(f'.\\attachments\\*{date}*')
+    for file2trash in files2trash:
+        send2trash(file2trash)
+        print(f'Moved to trash: {file2trash}')
