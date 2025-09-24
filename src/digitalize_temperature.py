@@ -1,5 +1,6 @@
 import glob
 import os
+import argparse
 from send2trash import send2trash
 
 import matplotlib.image as mpimg
@@ -8,16 +9,27 @@ import numpy as np
 import pandas as pd
 
 # -------------------------------------------------------------------------------
+# user input
+
+parser = argparse.ArgumentParser(description='Digitalize temperature graphs downloaded from FRITZ!SmartEnergy email reports.')
+parser.add_argument('--attachment_dir', type=str, default='.\\attachments', help='Directory where downloaded attachments are stored (default: ./attachments)')
+parser.add_argument('--data_dir'      , type=str, default='.\\data',        help='Directory for data files (default: ./data)')
+args = parser.parse_args()
+
+attachment_dir = args.attachment_dir
+data_dir       = args.data_dir
+
+# -------------------------------------------------------------------------------
 # get all temperature graph files
 
-files = glob.glob('.\\attachments\\ha_temp_*.png')
+files = glob.glob(f'{attachment_dir}\\ha_temp_*.png')
 
 # -------------------------------------------------------------------------------
 # create data directory if not exists
 
-if not os.path.exists('data'):
-    os.makedirs('data')
-    print(f"Created directory {'data'}")
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+    print(f"Created directory {data_dir}")
 
 # -------------------------------------------------------------------------------
 # reference tick labels to determine y axis scale
@@ -102,7 +114,7 @@ for file in files:
     # -------------------------------------------------------------------------------
     # save temperature to corresponding csv file
 
-    csvfile = sorted(glob.glob(f'.\\attachments\\{date}*.csv'))[-1] # get latest csv file of that day
+    csvfile = sorted(glob.glob(f'{attachment_dir}\\{date}*.csv'))[-1] # get latest csv file of that day
     data = pd.read_csv(csvfile, header=1, sep=';', decimal=',')
 
     data['Power / W'] = data['Verbrauchswert'] / 0.25 # energy is in Wh per 15 minutes = 0.25 hours
@@ -112,12 +124,16 @@ for file in files:
 
     data['Temperature / C'] = temp
 
-    data.to_csv(f'.\\data\\{date}.csv', index=False)
+    data.to_csv(f'{data_dir}\\{date}.csv', index=False)
+
+    print(f'{file} digitalized and saved to {data_dir}\\{date}.csv')
 
     # -------------------------------------------------------------------------------
     # remove all files with same date from attachments folder
 
-    files2trash = glob.glob(f'.\\attachments\\*{date}*')
+    files2trash = glob.glob(f'{attachment_dir}\\*{date}*')
     for file2trash in files2trash:
         send2trash(file2trash)
         print(f'Moved to trash: {file2trash}')
+
+    print(' ')
