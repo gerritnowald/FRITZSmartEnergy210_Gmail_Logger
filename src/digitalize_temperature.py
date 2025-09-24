@@ -1,5 +1,4 @@
 import glob
-import os
 import argparse
 from send2trash import send2trash
 
@@ -13,23 +12,9 @@ import pandas as pd
 
 parser = argparse.ArgumentParser(description='Digitalize temperature graphs downloaded from FRITZ!SmartEnergy email reports.')
 parser.add_argument('--attachment_dir', type=str, default='.\\attachments', help='Directory where downloaded attachments are stored (default: ./attachments)')
-parser.add_argument('--data_dir'      , type=str, default='.\\data',        help='Directory for data files (default: ./data)')
 args = parser.parse_args()
 
 attachment_dir = args.attachment_dir
-data_dir       = args.data_dir
-
-# -------------------------------------------------------------------------------
-# get all temperature graph files
-
-files = glob.glob(f'{attachment_dir}\\ha_temp_*.png')
-
-# -------------------------------------------------------------------------------
-# create data directory if not exists
-
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
-    print(f"Created directory {data_dir}")
 
 # -------------------------------------------------------------------------------
 # reference tick labels to determine y axis scale
@@ -65,6 +50,11 @@ tick_labels = {
 residual = lambda x, y: np.sum(np.abs(x - y))
 
 # -------------------------------------------------------------------------------
+# get all temperature graph files
+
+files = glob.glob(f'{attachment_dir}\\ha_temp_*.png')
+
+# -------------------------------------------------------------------------------
 # x-axis: pixel to hour conversion
 
 # x-pixel     48 corresponds to hour  0
@@ -79,10 +69,6 @@ hour = np.arange(0, 24, 15/60)
 # y-axis: pixel to temperature conversion
 
 for file in files:
-
-    # extract date from filename
-    date = file.split('_')[-3]
-    date = date[:4] + date[4:6] + date[6:8]
 
     # read image
     img = mpimg.imread(file)
@@ -111,8 +97,11 @@ for file in files:
     # Interpolate temperature values to every 15 minutes
     temp = np.interp(hour, hour_px, temp)
 
+    # extract date from filename
+    date = file.split('_')[-3]
+
     # -------------------------------------------------------------------------------
-    # save temperature to corresponding csv file
+    # load corresponding csv file with power data and add temperature data
 
     csvfile = sorted(glob.glob(f'{attachment_dir}\\{date}*.csv'))[-1] # get latest csv file of that day
     data = pd.read_csv(csvfile, header=1, sep=';', decimal=',')
@@ -122,11 +111,18 @@ for file in files:
     data = data[['Datum/Uhrzeit', 'Power / W']]    # retain only relevant columns
     data.rename(columns={'Datum/Uhrzeit': 'Time'}, inplace=True)
 
-    data['Temperature / C'] = temp
+    data['Time'] = pd.to_datetime(date + data['Time'], format='%Y%m%d%H:%M', errors='coerce')   # add date to time 
 
-    data.to_csv(f'{data_dir}\\{date}.csv', index=False)
+    data['Temperature / C'] = temp.round(3)
 
-    print(f'{file} digitalized and saved to {data_dir}\\{date}.csv')
+    # -------------------------------------------------------------------------------
+    # append to main dataset
+
+    dataset = pd.read_csv('data.csv')
+    dataset = pd.concat([dataset, data], ignore_index=True)
+    dataset.to_csv('data.csv', index=False)
+
+    print(f'{file} digitalized and appended to data.csv')
 
     # -------------------------------------------------------------------------------
     # remove all files with same date from attachments folder
