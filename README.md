@@ -20,23 +20,22 @@ pip install -r requirements.txt
 
 In Gmail, a filter has to be setup to apply a label to the reports.
 
-get label ID:
+get `LabelID`:
 ```bash
 python get_label_ids.py
 ```
 
-Download files:
+Download report attachements:
 ```bash
 python download_email_data.py LabelID
 ```
 
-see
+Digitalize temperature graphs and append to `data.csv`:
 ```bash
-python download_email_data.py -h
+python digitalize_temperature.py
 ```
-fur further options.
 
-Use `analyse_power.ipynb` and `analyse_temperature.ipynb` for analysis.
+Use `analysis.ipynb` to create graphs.
 
 
 ## Acknowledgements
