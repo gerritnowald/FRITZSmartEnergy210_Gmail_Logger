@@ -16,14 +16,14 @@ Analyze power & temperature
 pip install -r requirements.txt
 ```
 
-## usage
+4. in Gmail, set up a filter to apply a label to the reports
 
-In Gmail, a filter has to be setup to apply a label to the reports.
-
-get `LabelID`:
+5. get the corresponding `LabelID` using
 ```bash
 python get_label_ids.py
 ```
+
+## usage
 
 Download report attachements:
 ```bash
@@ -35,7 +35,7 @@ Digitalize temperature graphs and append to `data.csv`:
 python digitalize_temperature.py
 ```
 
-Use `analysis.ipynb` to create graphs.
+Use the Jupyter notebook `analysis.ipynb` to create graphs.
 
 
 ## Acknowledgements
