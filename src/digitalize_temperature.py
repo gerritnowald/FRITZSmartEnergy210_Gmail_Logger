@@ -20,6 +20,17 @@ attachment_dir = args.attachment_dir
 # reference tick labels to determine y axis scale
 
 tick_labels = {
+    15: np.array([
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 0, 0, 0, 1, 1],
+        [1, 0, 0, 0, 0, 1, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 1, 0, 0, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0]
+    ]),
     20: np.array([
         [1, 0, 0, 0, 0, 0, 1],
         [0, 0, 1, 1, 1, 0, 0],
@@ -84,15 +95,23 @@ for file in files:
     tick_label = line_mask[56:65, 30:37]
     y_max = min(tick_labels, key=lambda k: residual(tick_label, tick_labels[k]))
 
+    if residual(tick_label, tick_labels[y_max]) > 0:
+        raise Exception(f'Warning: No matching tick label found in {file}')
+
+    if y_max == 15:
+        y_min = -5
+    else:
+        y_min = 0
+
     # Extract the (topmost) y-pixel number of the line
     zero_mask = (line_mask == 0)
     line_y = zero_mask.argmax(axis=0).astype(float)
     line_y[~zero_mask.any(axis=0)] = np.nan
 
     # convert pixels to values
-    # y-pixel 267 corresponds to temperature 0
+    # y-pixel 267 corresponds to temperature y_min
     # y-pixel  66 corresponds to temperature y_max
-    temp = y_max * (line_y[49:-26] - 267) / (66 - 267)
+    temp = (line_y[49:-26] - 267) * (y_max - y_min) / (66 - 267) + y_min
 
     # Interpolate temperature values to every 15 minutes
     temp = np.interp(hour, hour_px, temp)
