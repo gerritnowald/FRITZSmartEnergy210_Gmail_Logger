@@ -137,8 +137,8 @@ for file in files:
 
     tick_labels_numbers = tick_labels_pixels.copy()
     for key in tick_labels_pixels:
-        tick_labels_numbers[key] = min(tick_labels_template, key=lambda k: residual(tick_labels_pixels[key], tick_labels_template[k]))
-        if residual(tick_labels_pixels[key], tick_labels_template[tick_labels_numbers[key]]) > 0:
+        tick_labels_numbers[key], min_residual = min(tick_labels_template, key=lambda k: residual(tick_labels_pixels[key], tick_labels_template[k]))
+        if min_residual > 0:
             raise Exception(f'No matching tick label found in {file}')
 
     y_max = int(tick_labels_numbers['upper_left'] + tick_labels_numbers['upper_right'])
