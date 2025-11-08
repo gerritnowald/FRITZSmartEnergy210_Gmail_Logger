@@ -19,8 +19,30 @@ attachment_dir = args.attachment_dir
 # -------------------------------------------------------------------------------
 # reference tick labels to determine y axis scale
 
-tick_labels = {
-    15: np.array([
+tick_labels_template = {
+    '': np.array([
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1]
+    ]),
+    '0': np.array([
+        [1, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 0, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [1, 0, 0, 0, 0, 0, 1]
+    ]),
+    '1': np.array([
         [1, 1, 1, 0, 0, 1, 1],
         [1, 1, 0, 0, 0, 1, 1],
         [1, 0, 0, 0, 0, 1, 1],
@@ -31,7 +53,7 @@ tick_labels = {
         [1, 1, 1, 0, 0, 1, 1],
         [1, 0, 0, 0, 0, 0, 0]
     ]),
-    20: np.array([
+    '2': np.array([
         [1, 0, 0, 0, 0, 0, 1],
         [0, 0, 1, 1, 1, 0, 0],
         [1, 1, 1, 1, 1, 0, 0],
@@ -42,7 +64,7 @@ tick_labels = {
         [0, 0, 1, 1, 1, 0, 0],
         [0, 0, 0, 0, 0, 0, 0]
     ]),
-    40: np.array([
+    '4': np.array([
         [1, 1, 1, 1, 0, 0, 1],
         [1, 1, 1, 0, 0, 0, 1],
         [1, 1, 0, 0, 0, 0, 1],
@@ -52,7 +74,18 @@ tick_labels = {
         [1, 1, 1, 1, 0, 0, 1],
         [1, 1, 1, 1, 0, 0, 1],
         [1, 1, 1, 0, 0, 0, 0]
-    ])
+    ]),
+    '8': np.array([
+        [1, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [1, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+        [1, 0, 0, 0, 0, 0, 1]
+    ]),
 }
 
 # -------------------------------------------------------------------------------
@@ -64,6 +97,9 @@ residual = lambda x, y: np.sum(np.abs(x - y))
 # get all temperature graph files
 
 files = glob.glob(f'{attachment_dir}\\ha_temp_*.png')
+
+if not files:
+    raise Exception(f'No temperature graph files found in {attachment_dir}')
 
 # -------------------------------------------------------------------------------
 # x-axis: pixel to hour conversion
@@ -92,11 +128,23 @@ for file in files:
 
     # determine y-axis scale by checking the tick labels (max either 20°C or 40°C)
     # find the closest tick label to the reference labels
-    tick_label = line_mask[56:65, 30:37]
-    y_max = min(tick_labels, key=lambda k: residual(tick_label, tick_labels[k]))
+    tick_labels_pixels = {
+        'upper_left' : line_mask[ 56:65 , 30:37], # upper label, left  digit
+        'upper_right': line_mask[ 56:65 , 38:45], # upper label, right digit
+        'lower_left' : line_mask[256:265, 30:37], # lower label, left  digit
+        'lower_right': line_mask[256:265, 38:45], # lower label, right digit
+    }
 
-    if residual(tick_label, tick_labels[y_max]) > 0:
-        raise Exception(f'Warning: No matching tick label found in {file}')
+    tick_labels_numbers = tick_labels_pixels.copy()
+    for key in tick_labels_pixels:
+        tick_labels_numbers[key] = min(tick_labels_template, key=lambda k: residual(tick_labels_pixels[key], tick_labels_template[k]))
+        if residual(tick_labels_pixels[key], tick_labels_template[tick_labels_numbers[key]]) > 0:
+            raise Exception(f'No matching tick label found in {file}')
+
+    y_max = int(tick_labels_numbers['upper_left'] + tick_labels_numbers['upper_right'])
+    y_min = int(tick_labels_numbers['lower_left'] + tick_labels_numbers['lower_right'])
+
+    
 
     if y_max == 15:
         y_min = -5
