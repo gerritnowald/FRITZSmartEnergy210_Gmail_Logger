@@ -1,3 +1,5 @@
+"""digitalizes temperature image files, merges with power data, appends to main dataset and deletes processed files"""
+
 import glob
 import argparse
 from send2trash import send2trash
@@ -126,8 +128,7 @@ for file in files:
     # Threshold: find dark pixels (line)
     line_mask = (gray > 0.6) * 1
 
-    # determine y-axis scale by checking the tick labels (max either 20°C or 40°C)
-    # find the closest tick label to the reference labels
+    # determine y-axis scale by comparing the tick labels to the references
     tick_labels_pixels = {
         'upper_left' : line_mask[ 56:65 , 30:37], # upper label, left  digit
         'upper_right': line_mask[ 56:65 , 38:45], # upper label, right digit
@@ -139,17 +140,10 @@ for file in files:
     for key in tick_labels_pixels:
         tick_labels_numbers[key], min_residual = min(tick_labels_template, key=lambda k: residual(tick_labels_pixels[key], tick_labels_template[k]))
         if min_residual > 0:
-            raise Exception(f'No matching tick label found in {file}')
+            raise Exception(f'No matching {key} tick label found for {file}')
 
     y_max = int(tick_labels_numbers['upper_left'] + tick_labels_numbers['upper_right'])
     y_min = int(tick_labels_numbers['lower_left'] + tick_labels_numbers['lower_right'])
-
-    
-
-    if y_max == 15:
-        y_min = -5
-    else:
-        y_min = 0
 
     # Extract the (topmost) y-pixel number of the line
     zero_mask = (line_mask == 0)

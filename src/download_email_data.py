@@ -1,3 +1,5 @@
+"""downloads email attachments from Gmail messages with a specific label, optionally moves messages to trash"""
+
 from googleapiclient.discovery import build
 
 import base64

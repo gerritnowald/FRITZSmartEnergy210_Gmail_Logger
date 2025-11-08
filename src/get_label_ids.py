@@ -1,3 +1,5 @@
+"""prints all Gmail label names with their respective IDs"""
+
 from googleapiclient.discovery import build
 
 from authentication.auth import authenticate
