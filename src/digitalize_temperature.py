@@ -3,6 +3,7 @@
 import glob
 import argparse
 from send2trash import send2trash
+import os
 
 import matplotlib.image as mpimg
 
@@ -14,9 +15,11 @@ import pandas as pd
 
 parser = argparse.ArgumentParser(description='Digitalize temperature graphs downloaded from FRITZ!SmartEnergy email reports.')
 parser.add_argument('--attachment_dir', type=str, default='.\\attachments', help='Directory where downloaded attachments are stored (default: ./attachments)')
+parser.add_argument('--dataset', type=str, default='data.csv', help='Output CSV file to append data (default: data.csv)')
 args = parser.parse_args()
 
 attachment_dir = args.attachment_dir
+out_csv = args.dataset
 
 # -------------------------------------------------------------------------------
 # reference tick labels to determine y axis scale
@@ -179,9 +182,11 @@ for file in files:
     # -------------------------------------------------------------------------------
     # append to main dataset
 
-    dataset = pd.read_csv('data.csv')
-    dataset = pd.concat([dataset, data], ignore_index=True)
-    dataset.to_csv('data.csv', index=False)
+    # ensure same column order as existing file if present
+    if os.path.exists(out_csv):
+        data.to_csv(out_csv, mode='a', header=False, index=False)
+    else:
+        data.to_csv(out_csv, mode='w', header=True, index=False)
 
     print(f'{file} digitalized and appended to data.csv')
 
