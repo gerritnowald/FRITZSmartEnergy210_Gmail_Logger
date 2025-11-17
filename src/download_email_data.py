@@ -78,6 +78,9 @@ for msgId in msgIds:
 # https://stackoverflow.com/questions/25832631/download-attachments-from-gmail-using-gmail-api
 
     for attId, filename in zip(attIds, filenames):
+        if "ha_stat_" in filename:
+            continue
+
         att = (service.users().messages().
             attachments().get(userId="me", messageId=msgId, id=attId).execute() )
         
