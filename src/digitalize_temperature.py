@@ -155,10 +155,12 @@ for file in files:
 
     # determine y-axis scale by comparing the tick labels to the references
     tick_labels_pixels = {
-        'upper_left' : line_mask[ 56:65 , 30:37], # upper label, left  digit
-        'upper_right': line_mask[ 56:65 , 38:45], # upper label, right digit
-        'lower_left' : line_mask[256:265, 30:37], # lower label, left  digit
-        'lower_right': line_mask[256:265, 38:45], # lower label, right digit
+        'upper_left'   : line_mask[ 56:65 , 22:29], # upper label, left   digit
+        'upper_middle' : line_mask[ 56:65 , 30:37], # upper label, middle digit
+        'upper_right'  : line_mask[ 56:65 , 38:45], # upper label, right  digit
+        'lower_left'   : line_mask[256:265, 22:29], # lower label, left   digit
+        'lower_middle' : line_mask[256:265, 30:37], # lower label, middle digit
+        'lower_right'  : line_mask[256:265, 38:45], # lower label, right  digit
     }
 
     tick_labels_numbers = tick_labels_pixels.copy()
@@ -168,8 +170,8 @@ for file in files:
         if min_residual > 0:
             raise Exception(f'No matching {key} tick label found for {file}')
 
-    y_max = int(tick_labels_numbers['upper_left'] + tick_labels_numbers['upper_right'])
-    y_min = int(tick_labels_numbers['lower_left'] + tick_labels_numbers['lower_right'])
+    y_max = int(tick_labels_numbers['upper_left'] + tick_labels_numbers['upper_middle'] + tick_labels_numbers['upper_right'])
+    y_min = int(tick_labels_numbers['lower_left'] + tick_labels_numbers['lower_middle'] + tick_labels_numbers['lower_right'])
 
     # Extract the (topmost) y-pixel number of the line
     zero_mask = (line_mask == 0)
