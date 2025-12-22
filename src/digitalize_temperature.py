@@ -111,7 +111,6 @@ for file in files:
     # -------------------------------------------------------------------------------
     # append to main dataset
 
-    # ensure same column order as existing file if present
     if os.path.exists(out_csv):
         data.to_csv(out_csv, mode='a', header=False, index=False)
     else:
@@ -131,6 +130,10 @@ for file in files:
 
 # -------------------------------------------------------------------------------
 # plot
+
+# load full dataset
+data = pd.read_csv(out_csv)
+data['Time'] = pd.to_datetime(data['Time'])
 
 # curve fit temperature data
 def sine(x, Ay, Ad, Tavg, φy, φd):
