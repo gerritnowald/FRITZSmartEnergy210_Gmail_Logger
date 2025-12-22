@@ -1,7 +1,12 @@
-Download *FRITZ!Smart Energy 210* reports using the Gmail API  
-Digitalize temperature plots  
-Analyze power & temperature
+# Logging of Power & Temperature Data from *FRITZ!Smart Energy 210* socket
 
+A *FRITZ!Box* can be configured to send daily E-Mail reports. 
+These are downloaded using the Gmail API. 
+The temperature data has to be extracted from pixel images. 
+Power & temperature data over time are saved into a csv file and can be analyzed using a Jupyter notebook.
+
+The main advantage of this complex approach is that no server is required to log the data. 
+The data is stored in e-mails and can be retrieved in batch.
 
 ## setup
 
