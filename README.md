@@ -1,5 +1,7 @@
 # Logging of Power & Temperature Data from *FRITZ!Smart Energy 210* socket
 
+![](https://raw.githubusercontent.com/gerritnowald/FRITZSmartEnergy210_Gmail_Logger/main/temperature_stats.webp)
+
 A *FRITZ!Box* can be configured to send daily E-Mail reports. 
 These are downloaded using the Gmail API. 
 The temperature data has to be extracted from pixel images. 
@@ -7,6 +9,10 @@ Power & temperature data over time are saved into a csv file and can be analyzed
 
 The main advantage of this complex approach is that no server is required to log the data. 
 The data is stored in e-mails and can be retrieved in batch.
+
+See also these blog posts:  
+https://gerritnowald.wordpress.com/2025/07/21/downloading-email-reports-using-the-gmail-api/  
+https://gerritnowald.wordpress.com/2025/07/23/from-pixels-to-data-extracting-temperature-values-from-images/
 
 ## setup
 
