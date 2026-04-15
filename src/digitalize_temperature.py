@@ -105,6 +105,7 @@ for file in files:
     data.rename(columns={'Datum/Uhrzeit': 'Time'}, inplace=True)
 
     data['Time'] = pd.to_datetime(date + data['Time'], format='%Y%m%d%H:%M', errors='coerce')   # add date to time 
+    data['Time'] = data['Time'].dt.strftime('%Y-%m-%d %H:%M')
 
     data['Temperature / C'] = temp.round(3)
 
@@ -138,7 +139,7 @@ data['Time'] = pd.to_datetime(data['Time'])
 # curve fit temperature data
 def sine(x, Ay, Ad, Tavg, φy, φd):
     return Ay * np.sin(2 * np.pi / (365 * 24 * 60 * 60) * x + φy) + \
-            Ad * np.sin(2 * np.pi / (24 * 60 * 60      ) * x + φd) + Tavg
+           Ad * np.sin(2 * np.pi / (      24 * 60 * 60) * x + φd) + Tavg
 
 data.dropna(inplace=True, axis=0)
 
