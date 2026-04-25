@@ -26,6 +26,29 @@ attachment_dir = args.attachment_dir
 out_csv = args.dataset
 
 # -------------------------------------------------------------------------------
+# drop duplicate files (keep only latest file of each day, determined by time in filename)
+
+def drop_duplicates(type, date_index):
+    files = glob.glob(f'{attachment_dir}\\*.{type}')
+
+    files = pd.DataFrame(files, columns=['file'])
+
+    files['date'] = files['file'].str.split('_').str[date_index]
+    files['time'] = files['file'].str.split('_').str[date_index + 1]
+
+    files = files.sort_values(['date', 'time'], ascending=[True, False])
+
+    dropped_mask = files.duplicated(subset='date', keep='first')
+    dropped_rows = files[dropped_mask].copy()
+
+    for file in dropped_rows['file']:
+        send2trash(file)
+        print(f'Moved to trash (duplicate): {file}')
+
+drop_duplicates('png', 3)
+drop_duplicates('csv', 0)
+
+# -------------------------------------------------------------------------------
 # get all temperature graph files
 
 files = glob.glob(f'{attachment_dir}\\ha_temp_*.png')
