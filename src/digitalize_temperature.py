@@ -155,30 +155,4 @@ for file in files:
 # -------------------------------------------------------------------------------
 # plot
 
-# load full dataset
-data = pd.read_csv(out_csv)
-data['Time'] = pd.to_datetime(data['Time'])
-
-# curve fit temperature data
-def sine(x, Ay, Ad, Tavg, φy, φd):
-    return Ay * np.sin(2 * np.pi / (365 * 24 * 60 * 60) * x + φy) + \
-           Ad * np.sin(2 * np.pi / (      24 * 60 * 60) * x + φd) + Tavg
-
-data.dropna(inplace=True, axis=0)
-
-seconds = (data['Time']-data['Time'].iloc[0]).dt.total_seconds()
-params, _ = curve_fit(sine, seconds, data['Temperature / C'])
-data['Temperature fit'] = sine(seconds, *params)
-
-# plot last 14 days
-ax = data.iloc[-14*96:].plot(
-    x='Time', y=['Temperature / C','Temperature fit','Power / W'],
-    secondary_y='Power / W',
-    xlabel='Date',
-    title=f'Temperature (14 days)',
-    grid=True,
-    style=['-',':','--']
-)
-ax.set_ylabel('Temperature / °C')
-ax.right_ax.set_ylabel('Power / W')
-plt.show()
+os.system("python plot_graphs.py")
