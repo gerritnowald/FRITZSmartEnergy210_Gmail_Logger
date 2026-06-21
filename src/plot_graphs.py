@@ -6,15 +6,15 @@ from scipy.optimize import curve_fit
 import argparse
 
 from matplotlib import pyplot as plt
-# plt.style.use('dark_background')
+from matplotlib.dates import HourLocator, DateFormatter
 
 # -------------------------------------------------------------------------------
 # argument parsing
 
 parser = argparse.ArgumentParser(description='Plot temperature and power data from CSV file.')
-parser.add_argument('--dataset', type=str, default='data.csv', help='CSV file to read data from (default: data.csv)')
-parser.add_argument('--hours_avg', type=int, default=4, help='Number of hours for moving average (default: 4)')
-parser.add_argument('--days', type=int, default=14, help='Number of days to show in time of day plot (default: 14)')
+parser.add_argument('--dataset',   type=str, default='data.csv', help='CSV file to read data from (default: data.csv)')
+parser.add_argument('--hours_avg', type=int, default=4,  help='Number of hours for moving average (default: 4)')
+parser.add_argument('--days_avg',  type=int, default=14, help='Number of days for moving average (default: 14)')
 args = parser.parse_args()
 
 # -------------------------------------------------------------------------------
@@ -22,13 +22,6 @@ args = parser.parse_args()
 
 data = pd.read_csv(args.dataset)
 data['Time'] = pd.to_datetime(data['Time'])
-
-# -------------------------------------------------------------------------------
-# low pass filter (moving average)
-
-# data is sampled every 15 minutes
-data['Temperature MA'] = data['Temperature / C'].rolling(args.hours_avg*4, min_periods=1).mean()
-data['Temperature MA'] = data['Temperature MA'].shift(- args.hours_avg*2)
 
 # -------------------------------------------------------------------------------
 # curve fit
@@ -50,6 +43,10 @@ print(f"{params[0]:7.2f} * np.sin(2π t/a + {params[3]:.2f}) + \n" \
 # -------------------------------------------------------------------------------
 # all data over time
 
+# low pass filter (moving average)
+data['Temperature MA'] = data['Temperature / C'].rolling(args.hours_avg*4, min_periods=1).mean()
+data['Temperature MA'] = data['Temperature MA'].shift(- args.hours_avg*2)
+
 fig1, axes1 = plt.subplots(nrows=2, ncols=1, figsize=(9, 16), sharex=True)
 fig1.suptitle(f'All data over time ({data.shape[0]//96} days)')
 
@@ -58,10 +55,8 @@ ax1 = data.plot(
     x='Time', y=['Power / W','Temperature fit','Temperature / C','Temperature MA'],
     secondary_y='Power / W',
     ax=axes1[0],
-    xlabel='Date',
     legend=True,
     grid=True, 
-    # style=['-',':','--',':'],
 )
 widths = [ 0.2, 0.1, 0.5]   # fit, temp, temp_ma
 for lw, line in zip(widths, ax1.get_lines()):
@@ -74,27 +69,36 @@ ax1.right_ax.set_ylabel('Power / W')
 energy = data.copy()
 energy['Time'] = energy['Time'].dt.date
 energy = energy.groupby('Time').agg('sum')
-energy = energy['Power / W'] * 0.25 / 1e3  # convert to kWh
+energy['Energy / kWh'] = energy['Power / W'] * 0.25 / 1e3  # convert to kWh
+
+# moving average
+energy['Energy MA'] = energy['Energy / kWh'].rolling(args.days_avg, min_periods=1).mean()
+energy['Energy MA'] = energy['Energy MA'].shift(- args.days_avg // 2)
 
 energy.plot(
+    y=['Energy / kWh', 'Energy MA'],
     ax=axes1[1],
     drawstyle='steps-post',
     ylabel='Energy per day / kWh',
-    xlabel='Time',
+    xlabel='Date',
     rot=45,
+    legend=True,
     grid=True)
-axes1[1].fill_between(energy.index, energy.values, step='post', alpha=1)
+axes1[1].fill_between(energy.index, energy['Energy / kWh'].values, step='post', alpha=1)
 
 # -------------------------------------------------------------------------------
 # over time of day, stats from last x days
 
 stats = data.copy()
-stats = stats.iloc[-args.days*96:] # filter last x days
+stats = stats.iloc[-args.days_avg*96:] # filter last x days
 stats['Time'] = stats['Time'].dt.time
 stats = stats.groupby('Time').agg(['min','median','max'])
 
+# Create datetime index for proper hourly ticks
+stats.index = pd.to_datetime('2000-01-01 ' + stats.index.astype(str))
+
 fig2, axes2 = plt.subplots(nrows=2, ncols=1, figsize=(9, 16), sharex=True)
-fig2.suptitle(f'Data over time of day (last {args.days} days)')
+fig2.suptitle(f'Data over time of day (last {args.days_avg} days)')
 
 # temperature
 stats['Temperature / C'].plot(
@@ -102,7 +106,6 @@ stats['Temperature / C'].plot(
     style=['k:', '-', 'k:'],
     ax=axes2[0],
     ylabel='Temperature / °C',
-    xlabel='Time',
     grid=True
 )
 
@@ -116,5 +119,9 @@ stats['Power / W'].plot(
     xlabel='Time',
     grid=True
 )
+
+# Set hourly xticks
+axes2[1].xaxis.set_major_locator(HourLocator(interval=1))
+axes2[1].xaxis.set_major_formatter(DateFormatter('%H:%M'))
 
 plt.show()

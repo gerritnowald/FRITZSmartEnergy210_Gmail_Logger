@@ -6,11 +6,9 @@ from send2trash import send2trash
 import os
 
 import matplotlib.image as mpimg
-from matplotlib import pyplot as plt
 
 import pandas as pd
 import numpy as np
-from scipy.optimize import curve_fit
 
 import digit_recognition
 
