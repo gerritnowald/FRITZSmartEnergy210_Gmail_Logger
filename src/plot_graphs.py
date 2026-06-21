@@ -52,18 +52,13 @@ fig1.suptitle(f'All data over time ({data.shape[0]//96} days)')
 
 # temperature
 ax1 = data.plot(
-    x='Time', y=['Power / W','Temperature fit','Temperature / C','Temperature MA'],
-    secondary_y='Power / W',
+    x='Time', y=['Temperature MA','Temperature fit'],
     ax=axes1[0],
+    ylabel='Temperature / °C',
     legend=True,
-    grid=True, 
-)
-widths = [ 0.2, 0.1, 0.5]   # fit, temp, temp_ma
-for lw, line in zip(widths, ax1.get_lines()):
+    grid=True)
+for lw, line in zip([0.5, 0.2], ax1.get_lines()):
     line.set_linewidth(lw)
-ax1.right_ax.lines[0].set_linewidth(0.2)    # power
-ax1.set_ylabel('Temperature / °C')
-ax1.right_ax.set_ylabel('Power / W')
 
 #  energy
 energy = data.copy()
@@ -106,8 +101,7 @@ stats['Temperature / C'].plot(
     style=['k:', '-', 'k:'],
     ax=axes2[0],
     ylabel='Temperature / °C',
-    grid=True
-)
+    grid=True)
 
 # power
 stats['Power / W'].plot(
@@ -117,8 +111,7 @@ stats['Power / W'].plot(
     ax=axes2[1],
     ylabel='Power / W',
     xlabel='Time',
-    grid=True
-)
+    grid=True)
 
 # Set hourly xticks
 axes2[1].xaxis.set_major_locator(HourLocator(interval=1))
