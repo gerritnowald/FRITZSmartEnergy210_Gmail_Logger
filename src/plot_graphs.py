@@ -43,21 +43,9 @@ seconds = (data['Time']-data['Time'].iloc[0]).dt.total_seconds()
 params, _ = curve_fit(sine, seconds, data['Temperature / C'])
 data['Temperature fit'] = sine(seconds, *params)
 
-print(params)
-
-# -------------------------------------------------------------------------------
-# Overview (x days)
-
-ax1 = data.iloc[-args.days*96:].plot(
-    x='Time', y=['Temperature / C','Temperature fit','Power / W'],
-    secondary_y='Power / W',
-    xlabel='Date',
-    title=f'Overview ({args.days} days)',
-    grid=True,
-    style=['-',':','--']
-)
-ax1.set_ylabel('Temperature / °C')
-ax1.right_ax.set_ylabel('Power / W')
+print("Fitted temperature function:")
+print(f"{params[0]:7.2f} * np.sin(2π t/a + {params[3]:.2f}) + \n" \
+      f"{params[1]:7.2f} * np.sin(2π t/d + {params[4]:.2f}) + {params[2]:.2f}")
 
 # -------------------------------------------------------------------------------
 # all data over time
@@ -66,17 +54,21 @@ fig1, axes1 = plt.subplots(nrows=2, ncols=1, figsize=(9, 16), sharex=True)
 fig1.suptitle(f'All data over time ({data.shape[0]//96} days)')
 
 # temperature
-ax2 = data.plot(
-    x='Time', y='Temperature MA',
+ax1 = data.plot(
+    x='Time', y=['Power / W','Temperature fit','Temperature / C','Temperature MA'],
+    secondary_y='Power / W',
     ax=axes1[0],
     xlabel='Date',
-    ylabel='Temperature / °C', 
-    legend=False,
+    legend=True,
     grid=True, 
-    linewidth=.4
+    # style=['-',':','--',':'],
 )
-axes1[0].plot(data['Time'], data['Temperature fit'], '--', linewidth=.3)
-axes1[0].legend(['Measurement (MA)', 'Fit'])
+widths = [ 0.2, 0.1, 0.5]   # fit, temp, temp_ma
+for lw, line in zip(widths, ax1.get_lines()):
+    line.set_linewidth(lw)
+ax1.right_ax.lines[0].set_linewidth(0.2)    # power
+ax1.set_ylabel('Temperature / °C')
+ax1.right_ax.set_ylabel('Power / W')
 
 #  energy
 energy = data.copy()
@@ -86,12 +78,12 @@ energy = energy['Power / W'] * 0.25 / 1e3  # convert to kWh
 
 energy.plot(
     ax=axes1[1],
-    drawstyle='steps-mid',
+    drawstyle='steps-post',
     ylabel='Energy per day / kWh',
     xlabel='Time',
     rot=45,
     grid=True)
-axes1[1].fill_between(energy.index, energy.values, step='mid', alpha=1)
+axes1[1].fill_between(energy.index, energy.values, step='post', alpha=1)
 
 # -------------------------------------------------------------------------------
 # over time of day, stats from last x days
