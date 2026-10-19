@@ -153,4 +153,4 @@ for file in files:
 # -------------------------------------------------------------------------------
 # plot
 
-os.system("python plot_graphs.py")
+os.system("python plot_graphs.py --days_avg 14")
